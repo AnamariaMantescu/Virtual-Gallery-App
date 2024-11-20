@@ -1,0 +1,9 @@
+node_modules/
+virtual-gallery-frontend/node_modules/
+virtual-gallery-backend/node_modules/
+virtual-gallery-frontend/dist/
+.env
+server/config/serviceAccountKey.json
+.env
+server/config/serviceAccountKey.json
+.env
