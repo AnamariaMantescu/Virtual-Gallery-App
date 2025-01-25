@@ -102,14 +102,11 @@ const error = ref(null)
 
 onMounted(async () => {
   try {
-    // Fetch available artworks
     await store.dispatch('artwork/fetchArtworks')
     availableArtworks.value = store.getters['artwork/allArtworks']
     
-    // Fetch current exhibition data
     const exhibition = await store.dispatch('exhibition/fetchExhibitionById', route.params.id)
     
-    // Format dates for input type="date"
     formData.value = {
       ...exhibition,
       startDate: formatDateForInput(exhibition.startDate),

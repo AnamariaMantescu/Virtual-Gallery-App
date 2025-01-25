@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <!-- Navbar -->
+    <!-- nav -->
     <nav class="navbar">
       <div class="nav-brand">
         <router-link to="/" class="brand-link">Virtual Gallery</router-link>
@@ -37,7 +37,7 @@
       </div>
     </nav>
 
-    <!-- Content -->
+    <!-- content -->
     <RouterView />
   </div>
 </template>
@@ -176,7 +176,6 @@ const handleLogout = async () => {
   background-color: #d32f2f;
 }
 
-/* Global */
 body {
   margin: 0;
   padding: 0;
@@ -232,7 +231,6 @@ main {
   }
 }
 
-/* Tablet */
 @media (min-width: 769px) and (max-width: 1024px) {
   .nav-links {
     gap: 1rem;
@@ -243,7 +241,6 @@ main {
   }
 }
 
-/* Container responsiveness */
 .container {
   width: 100%;
   margin: 0 auto;
@@ -274,7 +271,6 @@ main {
   }
 }
 
-/* Grid System */
 .grid {
   display: grid;
   gap: var(--spacing-sm);

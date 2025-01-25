@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { db } = require('../config/firebase');
-const authMiddleware = require('../middleware/auth');
+const { authMiddleware, requireAdmin } = require('../middleware/auth');
 
 router.get('/', async (req, res) => {
   try {
@@ -28,7 +28,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-router.post('/', authMiddleware, async (req, res) => {
+router.post('/', authMiddleware, requireAdmin, async (req, res) => {
   try {
     const { title, description, artworks } = req.body;
     const newCollection = {
@@ -45,7 +45,7 @@ router.post('/', authMiddleware, async (req, res) => {
   }
 });
 
-router.put('/:id', authMiddleware, async (req, res) => {
+router.put('/:id', authMiddleware,requireAdmin, async (req, res) => {
   try {
     const { title, description, artworks } = req.body;
     const updateData = {

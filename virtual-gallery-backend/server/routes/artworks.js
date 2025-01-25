@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const { db } = require('../config/firebase');
-const authMiddleware = require('../middleware/auth');
+const { authMiddleware, requireAdmin } = require('../middleware/auth');
 
+// Public route
 router.get('/', async (req, res) => {
   try {
     const artworksSnapshot = await db.collection('artworks').get();
@@ -16,19 +17,8 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.get('/:id', async (req, res) => {
-  try {
-    const artworkDoc = await db.collection('artworks').doc(req.params.id).get();
-    if (!artworkDoc.exists) {
-      return res.status(404).json({ error: 'Artwork not found' });
-    }
-    res.json({ id: artworkDoc.id, ...artworkDoc.data() });
-  } catch (error) {
-    res.status(500).json({ error: 'Error fetching artwork' });
-  }
-});
-
-router.post('/', authMiddleware, async (req, res) => {
+// Protected routes
+router.post('/', authMiddleware, requireAdmin, async (req, res) =>{
   try {
     const { title, artist, description, imageUrl, year } = req.body;
     const newArtwork = {
@@ -47,7 +37,8 @@ router.post('/', authMiddleware, async (req, res) => {
   }
 });
 
-router.put('/:id', authMiddleware, async (req, res) => {
+
+router.put('/:id', authMiddleware, requireAdmin, async (req, res) => {
   try {
     const { title, artist, description, imageUrl, year } = req.body;
     const updateData = {
@@ -65,7 +56,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
   }
 });
 
-router.delete('/:id', authMiddleware, async (req, res) => {
+router.delete('/:id', authMiddleware, requireAdmin, async (req, res) => {
   try {
     await db.collection('artworks').doc(req.params.id).delete();
     res.json({ message: 'Artwork deleted successfully' });
