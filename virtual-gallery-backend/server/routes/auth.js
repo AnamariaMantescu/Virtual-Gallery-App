@@ -1,44 +1,65 @@
 const express = require('express');
 const router = express.Router();
-const { admin } = require('../config/firebase');
+const { admin, db } = require('../config/firebase'); 
 const { authMiddleware } = require('../middleware/auth');
 
-// new user
-router.post('/register', async (req, res) => {
-    try {
-        const { email } = req.body;
-        const token = req.headers.authorization?.split('Bearer ')[1];
-        
-        if (!token) {
-            return res.status(401).json({ error: 'Token lipsește' });
-        }
-        
-        const decodedToken = await admin.auth().verifyIdToken(token);
-        await admin.auth().setCustomUserClaims(decodedToken.uid, { role: 'user' });
-        
-        res.status(201).json({ 
-            message: 'Utilizator înregistrat cu succes',
-            uid: decodedToken.uid 
-        });
-    } catch (error) {
-        console.error('Eroare înregistrare:', error);
-        res.status(400).json({ error: error.message });
-    }
-});
 
-// verify token and user
-router.get('/me', authMiddleware, async (req, res) => {
+const { registerUserValidationRules } = require('../validators/authValidators');
+const validateRequest = require('../middleware/validate');
+
+
+router.post(
+  '/register',
+  registerUserValidationRules, 
+  validateRequest,             
+  async (req, res, next) => {
     try {
-        const userRecord = await admin.auth().getUser(req.user.uid);
-        
-        res.json({
-            uid: userRecord.uid,
-            email: userRecord.email,
-            role: req.user.role
-        });
+      const { email, name } = req.body;
+
+      const existingUser = await admin.auth().getUserByEmail(email).catch(() => null);
+      if (existingUser) {
+        return next({ statusCode: 400, message: 'Email-ul este deja înregistrat.' });
+      }
+
+      const userRecord = await admin.auth().createUser({
+        email,
+        displayName: name,
+        emailVerified: false,
+        disabled: false
+      });
+
+      await admin.auth().setCustomUserClaims(userRecord.uid, { role: 'user' });
+
+      await db.collection('users').doc(userRecord.uid).set({
+        name: name || '',
+        email,
+        role: 'user',
+        createdAt: new Date().toISOString()
+      });
+
+      return res.status(201).json({
+        message: 'Utilizator înregistrat cu succes',
+        uid: userRecord.uid
+      });
     } catch (error) {
-        res.status(401).json({ error: 'Token invalid' });
+      console.error('Eroare înregistrare:', error);
+      next({ statusCode: 400, message: error.message });
     }
+  }
+);
+
+router.get('/me', authMiddleware, async (req, res, next) => {
+  try {
+    const userRecord = await admin.auth().getUser(req.user.uid);
+    res.json({
+      uid: userRecord.uid,
+      email: userRecord.email,
+      role: req.user.role
+    });
+  } catch (error) {
+    console.error('Eroare obținere user:', error);
+    next({ statusCode: 401, message: 'Token invalid' });
+  }
 });
 
 module.exports = router;

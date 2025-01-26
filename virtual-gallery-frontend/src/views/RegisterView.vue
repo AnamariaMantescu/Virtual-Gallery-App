@@ -12,6 +12,19 @@
         </div>
 
         <div class="form-group">
+          <label for="name">Name</label>
+          <input
+            type="text"
+            id="name"
+            v-model="name"
+            required
+            :disabled="loading"
+            class="form-input"
+            placeholder="Your name"
+          >
+        </div>
+
+        <div class="form-group">
           <label for="email">Email</label>
           <input 
             type="email" 
@@ -78,6 +91,7 @@ import { useRouter } from 'vue-router'
 const store = useStore()
 const router = useRouter()
 
+const name = ref('')
 const email = ref('')
 const password = ref('')
 const confirmPassword = ref('')
@@ -107,6 +121,7 @@ const handleRegister = async () => {
 
   try {
     await store.dispatch('auth/register', {
+      name: name.value,
       email: email.value,
       password: password.value
     })

@@ -85,43 +85,50 @@ export default {
       }
     },
 
-    async register({ commit }, { email, password }) {
-      commit('SET_LOADING', true)
-      commit('CLEAR_ERROR')
-      
-      try {
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password)
-        const { user } = userCredential
-        
-        const token = await user.getIdToken()
-        
-        const response = await fetch('/api/auth/register', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({ email })
-        })
-        
-        if (!response.ok) {
-          const errorData = await response.json()
-          throw new Error(errorData.error || 'Failed to register user')
-        }
-        
-        commit('SET_USER', {
-          uid: user.uid,
-          email: user.email,
-          role: 'user',
-          token
-        })
-      } catch (error) {
-        commit('SET_ERROR', error.message)
-        throw error
-      } finally {
-        commit('SET_LOADING', false)
-      }
-    },
+
+async register({ commit }, { email, password, name }) {
+  commit('SET_LOADING', true)
+  commit('CLEAR_ERROR')
+  
+  try {
+    // 1) Creăm userul în Firebase Auth
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password)
+    const { user } = userCredential
+    
+    // 2) Luăm tokenul
+    const token = await user.getIdToken()
+    
+    // 3) Trimitem POST către backend-ul nostru (/api/auth/register)
+    //    Transmitem și `name` în body
+    const response = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ email, name })
+    })
+    
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.error || 'Failed to register user')
+    }
+    
+    // 4) Setăm userul în store cu rol user
+    commit('SET_USER', {
+      uid: user.uid,
+      email: user.email,
+      role: 'user',
+      token
+    })
+  } catch (error) {
+    commit('SET_ERROR', error.message)
+    throw error
+  } finally {
+    commit('SET_LOADING', false)
+  }
+},
+
 
     async logout({ commit }) {
       try {
