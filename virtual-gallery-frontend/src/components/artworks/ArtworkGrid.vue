@@ -81,15 +81,27 @@ const confirmDelete = async () => {
 <style scoped>
 .artwork-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  grid-template-columns: repeat(4, 1fr); /* Ensures 4 artworks per row */
   gap: 2rem;
   padding: 1rem;
 }
 
+@media (max-width: 1024px) {
+  .artwork-grid {
+    grid-template-columns: repeat(3, 1fr); /* 3 artworks per row on medium screens */
+  }
+}
+
 @media (max-width: 768px) {
   .artwork-grid {
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-template-columns: repeat(2, 1fr); /* 2 artworks per row on small screens */
     gap: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .artwork-grid {
+    grid-template-columns: 1fr; /* 1 artwork per row on extra small screens */
   }
 }
 </style>

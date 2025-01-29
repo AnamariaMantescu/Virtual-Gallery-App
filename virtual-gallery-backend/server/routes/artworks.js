@@ -5,7 +5,7 @@ const {
   getArtworkById,
   createArtwork,
   updateArtwork,
-  deleteArtwork
+  deleteArtwork,
 } = require('../controllers/artworksController');
 const { authMiddleware, requireAdmin } = require('../middleware/auth');
 
@@ -15,9 +15,8 @@ const {
 } = require('../validators/artworkValidators');
 const validateRequest = require('../middleware/validate');
 
-router.get('/', getAllArtworks);
+router.get('/', authMiddleware, getAllArtworks);
 router.get('/:id', getArtworkById);
-
 router.post(
   '/',
   authMiddleware,

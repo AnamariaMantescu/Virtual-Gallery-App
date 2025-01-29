@@ -1,4 +1,3 @@
-// src/components/artworks/ArtworkDetail.vue
 <template>
   <div class="artwork-detail">
     <div class="artwork-image">
@@ -121,4 +120,3 @@ defineEmits(['edit', 'delete'])
     grid-template-columns: 1fr;
   }
 }
-</style>

@@ -3,12 +3,49 @@ const { db } = require('../config/firebase');
 /* get all artworks */
 const getAllArtworks = async (req, res, next) => {
   try {
-    const artworksSnapshot = await db.collection('artworks').get();
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 12;
+    const startAt = (page - 1) * limit;
+
+    // Get user role from the authenticated request
+    const userRole = req.user?.role || 'visitor';
+    
+    // Create base query
+    let artworksQuery = db.collection('artworks')
+      .orderBy('metadata.createdAt', 'desc');
+
+    // Apply role-based filtering
+    if (userRole !== 'admin') {
+      artworksQuery = artworksQuery.where('isApproved', '==', true);
+    }
+
+    // Get total count based on role
+    let totalQuery = db.collection('artworks');
+    if (userRole !== 'admin') {
+      totalQuery = totalQuery.where('isApproved', '==', true);
+    }
+    const totalSnapshot = await totalQuery.get();
+    const totalArtworks = totalSnapshot.size;
+
+    // Apply pagination to main query
+    artworksQuery = artworksQuery.offset(startAt).limit(limit);
+    const artworksSnapshot = await artworksQuery.get();
+
+    // Transform data
     const artworks = [];
     artworksSnapshot.forEach((doc) => {
-      artworks.push({ id: doc.id, ...doc.data() });
+      artworks.push({
+        id: doc.id,
+        ...doc.data()
+      });
     });
-    res.json(artworks);
+
+    res.json({
+      data: artworks,
+      currentPage: page,
+      totalPages: Math.ceil(totalArtworks / limit),
+      totalItems: totalArtworks,
+    });
   } catch (error) {
     console.error('Error fetching artworks:', error);
     next({ statusCode: 500, message: 'Error fetching artworks' });
@@ -19,10 +56,20 @@ const getAllArtworks = async (req, res, next) => {
 const getArtworkById = async (req, res, next) => {
   try {
     const artworkDoc = await db.collection('artworks').doc(req.params.id).get();
+    
     if (!artworkDoc.exists) {
       return next({ statusCode: 404, message: 'Artwork not found' });
     }
-    res.json({ id: artworkDoc.id, ...artworkDoc.data() });
+
+    const artwork = { id: artworkDoc.id, ...artworkDoc.data() };
+    const userRole = req.user?.role || 'visitor';
+
+    // Check if user has access to this artwork
+    if (!artwork.isApproved && userRole !== 'admin') {
+      return next({ statusCode: 403, message: 'Access denied' });
+    }
+
+    res.json(artwork);
   } catch (error) {
     console.error('Error fetching artwork:', error);
     next({ statusCode: 500, message: 'Error fetching artwork' });
@@ -56,11 +103,12 @@ const createArtwork = async (req, res, next) => {
       medium,
       dimensions,
       status,
+      isApproved: req.user.role === 'admin', // Auto-approve if admin creates
       metadata: {
         createdAt: new Date().toISOString(),
         createdBy: req.user.uid,
-        updatedAt: null
-      }
+        updatedAt: null,
+      },
     };
 
     const docRef = await db.collection('artworks').add(newArtwork);
@@ -74,6 +122,13 @@ const createArtwork = async (req, res, next) => {
 /* update artwork */
 const updateArtwork = async (req, res, next) => {
   try {
+    const artworkRef = db.collection('artworks').doc(req.params.id);
+    const artworkDoc = await artworkRef.get();
+
+    if (!artworkDoc.exists) {
+      return next({ statusCode: 404, message: 'Artwork not found' });
+    }
+
     const {
       title,
       artist,
@@ -101,14 +156,10 @@ const updateArtwork = async (req, res, next) => {
       'metadata.updatedAt': new Date().toISOString()
     };
 
-    const artworkRef = db.collection('artworks').doc(req.params.id);
-    const artworkDoc = await artworkRef.get();
-    if (!artworkDoc.exists) {
-      return next({ statusCode: 404, message: 'Artwork not found' });
-    }
-
     await artworkRef.update(updateData);
-    res.json({ id: req.params.id, ...updateData });
+    
+    const updatedDoc = await artworkRef.get();
+    res.json({ id: req.params.id, ...updatedDoc.data() });
   } catch (error) {
     console.error('Error updating artwork:', error);
     next({ statusCode: 500, message: 'Error updating artwork' });
@@ -120,6 +171,7 @@ const deleteArtwork = async (req, res, next) => {
   try {
     const artworkRef = db.collection('artworks').doc(req.params.id);
     const artworkDoc = await artworkRef.get();
+
     if (!artworkDoc.exists) {
       return next({ statusCode: 404, message: 'Artwork not found' });
     }
@@ -137,5 +189,5 @@ module.exports = {
   getArtworkById,
   createArtwork,
   updateArtwork,
-  deleteArtwork
+  deleteArtwork,
 };
