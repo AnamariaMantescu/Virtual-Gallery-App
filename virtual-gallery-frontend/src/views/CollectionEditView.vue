@@ -1,45 +1,25 @@
 <template>
   <div class="collection-edit">
     <h1>Edit Collection</h1>
-    <form v-if="formData" @submit.prevent="handleSubmit" class="form">
+
+    <form v-if="formData" @submit.prevent="handleSubmit">
       <div class="form-group">
-        <label for="title">Title</label>
-        <input 
-          id="title"
-          v-model="formData.title"
-          type="text"
-          required
-        >
+        <label>Title</label>
+        <input v-model="formData.title" type="text" required />
       </div>
 
       <div class="form-group">
-        <label for="description">Description</label>
-        <textarea
-          id="description"
-          v-model="formData.description"
-          rows="4"
-          required
-        ></textarea>
+        <label>Description</label>
+        <textarea v-model="formData.description" required></textarea>
       </div>
 
       <div class="form-group">
-        <label>Select Artworks</label>
-        <div class="artwork-selection">
-          <div v-for="artwork in availableArtworks" :key="artwork.id" class="artwork-option">
-            <input
-              type="checkbox"
-              :value="artwork.id"
-              v-model="formData.artworks"
-              :id="'artwork-' + artwork.id"
-            >
-            <label :for="'artwork-' + artwork.id">{{ artwork.title }}</label>
-          </div>
-        </div>
+        <label>Theme</label>
+        <input v-model="formData.theme" type="text" required />
       </div>
 
-      <div class="form-actions">
-        <router-link to="/collections" class="cancel-btn">Cancel</router-link>
-        <button type="submit" class="submit-btn">Save Changes</button>
+      <div class="actions">
+        <button type="submit">Save Changes</button>
       </div>
     </form>
   </div>
@@ -55,21 +35,18 @@ const route = useRoute()
 const router = useRouter()
 
 const formData = ref(null)
-const availableArtworks = ref([])
 
 onMounted(async () => {
   try {
-    await store.dispatch('artwork/fetchArtworks')
-    availableArtworks.value = store.getters['artwork/allArtworks']
-    
     const collection = await store.dispatch('collection/fetchCollectionById', route.params.id)
     formData.value = { ...collection }
   } catch (error) {
-    console.error('Error fetching data:', error)
+    console.error('Error fetching collection:', error)
+    router.push('/collections')
   }
 })
 
-const handleSubmit = async () => {
+async function handleSubmit() {
   try {
     await store.dispatch('collection/updateCollection', {
       id: route.params.id,
@@ -83,56 +60,90 @@ const handleSubmit = async () => {
 </script>
 
 <style scoped>
-.collections-page {
+.collection-edit {
+  max-width: 600px;
+  margin: 2rem auto;
   padding: 2rem;
+  background: #fafafa;
+  border-radius: 8px;
+  border: 1px solid #ddd;
 }
 
-.header {
+h1 {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  padding: 0.5rem;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+
+.form-group textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.artwork-selection {
+  display: flex;
+  flex-direction: column;
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  padding: 0.5rem;
+  border-radius: 4px;
+}
+
+.artwork-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.2rem 0;
+}
+
+.actions {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
+  margin-top: 1.5rem;
 }
 
-.create-btn {
+.cancel-btn {
+  padding: 0.75rem 1.25rem;
+  background-color: #bbb;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 4px;
+}
+
+.cancel-btn:hover {
+  background-color: #999;
+}
+
+.submit-btn {
+  padding: 0.75rem 1.25rem;
+  border: none;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
   background-color: #4CAF50;
-  color: white;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  text-decoration: none;
+  color: #fff;
 }
 
-.collections-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 2rem;
-}
-
-.collection-card {
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 1.5rem;
-  background: white;
-}
-
-.edit-btn {
-  background-color: #2196F3;
-  color: white;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  text-decoration: none;
-  display: inline-block;
-  margin-top: 1rem;
-}
-
-.artwork-count {
-  color: #666;
-  margin-top: 0.5rem;
-}
-
-@media (max-width: 768px) {
-  .collections-grid {
-    grid-template-columns: 1fr;
-  }
+.submit-btn:hover {
+  background-color: #45a049;
 }
 </style>

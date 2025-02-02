@@ -20,7 +20,7 @@ router.get('/:id', authMiddleware, getUserById);
 router.put(
   '/:id',
   authMiddleware,
-  updateUserValidationRules, 
+  updateUserValidationRules,
   validateRequest,
   updateUser
 );

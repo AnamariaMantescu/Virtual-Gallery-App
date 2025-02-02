@@ -5,12 +5,12 @@ exports.updateUserValidationRules = [
     .optional()
     .isLength({ min: 2 })
     .withMessage('Numele trebuie să conțină minim 2 caractere.'),
-  
+
   body('email')
     .optional()
     .isEmail()
     .withMessage('Email invalid.'),
-  
+
   body('role')
     .optional()
     .isIn(['admin', 'user'])

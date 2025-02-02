@@ -8,6 +8,7 @@ const {
   deleteCollection
 } = require('../controllers/collectionsController');
 const { authMiddleware, requireAdmin } = require('../middleware/auth');
+const { optionalAuthMiddleware } = require('../middleware/auth');
 
 const {
   createCollectionValidationRules,
@@ -17,13 +18,13 @@ const validateRequest = require('../middleware/validate');
 
 
 router.get('/', getAllCollections);
-router.get('/:id', getCollectionById);
+router.get('/:id', optionalAuthMiddleware, getCollectionById);
 
 router.post(
   '/',
   authMiddleware,
   requireAdmin,
-  createCollectionValidationRules, 
+  createCollectionValidationRules,
   validateRequest,
   createCollection
 );
@@ -32,7 +33,7 @@ router.put(
   '/:id',
   authMiddleware,
   requireAdmin,
-  updateCollectionValidationRules, 
+  updateCollectionValidationRules,
   validateRequest,
   updateCollection
 );

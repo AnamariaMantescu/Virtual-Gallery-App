@@ -1,12 +1,12 @@
 import { db } from '@/config/firebase';
-import { 
-  collection, 
-  getDocs, 
-  getDoc, 
-  addDoc, 
+import {
+  collection,
+  getDocs,
+  getDoc,
+  addDoc,
   updateDoc,
   deleteDoc,
-  doc 
+  doc
 } from 'firebase/firestore';
 
 
@@ -19,7 +19,7 @@ export const firestoreService = {
     }));
   },
 
-
+ 
   async getById(collectionName, id) {
     const docRef = doc(db, collectionName, id);
     const docSnap = await getDoc(docRef);

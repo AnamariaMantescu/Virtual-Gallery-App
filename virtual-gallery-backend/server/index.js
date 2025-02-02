@@ -9,8 +9,8 @@ dotenv.config();
 const authRouter = require('./routes/auth');
 const artworksRouter = require('./routes/artworks');
 const collectionsRouter = require('./routes/collections');
-const exhibitionsRouter = require('./routes/exhibitions');
-const usersRouter = require('./routes/users'); 
+const usersRouter = require('./routes/users');
+const stylesRouter = require('./routes/styles');
 
 const app = express();
 
@@ -21,8 +21,8 @@ app.use(morgan('dev'));
 app.use('/api/auth', authRouter);
 app.use('/api/artworks', artworksRouter);
 app.use('/api/collections', collectionsRouter);
-app.use('/api/exhibitions', exhibitionsRouter);
-app.use('/api/users', usersRouter); 
+app.use('/api/users', usersRouter);
+app.use('/api/styles', stylesRouter);
 
 app.get('/', (req, res) => {
   res.json({ message: 'Virtual GALLERY API' });

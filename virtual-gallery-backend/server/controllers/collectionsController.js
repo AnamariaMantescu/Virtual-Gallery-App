@@ -1,13 +1,31 @@
 const { db } = require('../config/firebase');
 
-/* get all collections */
 const getAllCollections = async (req, res, next) => {
   try {
     const collectionsSnapshot = await db.collection('collections').get();
-    const collections = [];
-    collectionsSnapshot.forEach(doc => {
-      collections.push({ id: doc.id, ...doc.data() });
-    });
+    const collections = await Promise.all(
+      collectionsSnapshot.docs.map(async (doc) => {
+        const collectionData = { id: doc.id, ...doc.data() };
+
+        if (collectionData.artworks && collectionData.artworks.length) {
+          const artworkRefs = collectionData.artworks.map(artworkId =>
+            db.collection('artworks').doc(artworkId)
+          );
+          const artworkDocs = await Promise.all(artworkRefs.map(ref => ref.get()));
+          let artworks = artworkDocs
+            .filter(artDoc => artDoc.exists)
+            .map(artDoc => ({ id: artDoc.id, ...artDoc.data() }));
+
+          if (!req.user || req.user.role !== 'admin') {
+            artworks = artworks.filter(art => art.isApproved === true);
+          }
+          collectionData.artworks = artworks;
+        } else {
+          collectionData.artworks = [];
+        }
+        return collectionData;
+      })
+    );
     res.json(collections);
   } catch (error) {
     console.error('Error fetching collections:', error);
@@ -15,21 +33,41 @@ const getAllCollections = async (req, res, next) => {
   }
 };
 
-/* get collection by ID */
 const getCollectionById = async (req, res, next) => {
   try {
     const collectionDoc = await db.collection('collections').doc(req.params.id).get();
     if (!collectionDoc.exists) {
       return next({ statusCode: 404, message: 'Collection not found' });
     }
-    res.json({ id: collectionDoc.id, ...collectionDoc.data() });
+
+    let collection = { id: collectionDoc.id, ...collectionDoc.data() };
+
+    if (collection.artworks && collection.artworks.length > 0) {
+      const artworkRefs = collection.artworks.map((artworkId) =>
+        db.collection('artworks').doc(artworkId)
+      );
+      const artworkDocs = await Promise.all(artworkRefs.map((ref) => ref.get()));
+
+      let allArtworks = artworkDocs
+        .filter((doc) => doc.exists)
+        .map((doc) => ({ id: doc.id, ...doc.data() }));
+
+      if (!req.user || req.user.role !== 'admin') {
+        allArtworks = allArtworks.filter((art) => art.isApproved === true);
+      }
+
+      collection.artworks = allArtworks;
+    } else {
+      collection.artworks = [];
+    }
+
+    res.json(collection);
   } catch (error) {
     console.error('Error fetching collection:', error);
     next({ statusCode: 500, message: 'Error fetching collection' });
   }
 };
 
-/* create collection */
 const createCollection = async (req, res, next) => {
   try {
     const { title, description, artworks, curator, theme, isPublic } = req.body;
@@ -38,9 +76,7 @@ const createCollection = async (req, res, next) => {
       ...(title && { title }),
       ...(description && { description }),
       ...(artworks && { artworks }),
-      ...(curator && { curator }),
       ...(theme && { theme }),
-      ...(isPublic !== undefined && { isPublic }),
       metadata: {
         createdAt: new Date().toISOString(),
         createdBy: req.user.uid,
@@ -56,7 +92,6 @@ const createCollection = async (req, res, next) => {
   }
 };
 
-/* update collection */
 const updateCollection = async (req, res, next) => {
   try {
     const { title, description, artworks, curator, theme, isPublic } = req.body;
@@ -65,9 +100,7 @@ const updateCollection = async (req, res, next) => {
       ...(title && { title }),
       ...(description && { description }),
       ...(artworks && { artworks }),
-      ...(curator && { curator }),
       ...(theme && { theme }),
-      ...(isPublic !== undefined && { isPublic }),
       'metadata.updatedAt': new Date().toISOString()
     };
 
@@ -85,7 +118,6 @@ const updateCollection = async (req, res, next) => {
   }
 };
 
-/* delete collection */
 const deleteCollection = async (req, res, next) => {
   try {
     const collectionRef = db.collection('collections').doc(req.params.id);

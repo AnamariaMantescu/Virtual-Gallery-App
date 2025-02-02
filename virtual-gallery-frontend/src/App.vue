@@ -1,43 +1,28 @@
 <template>
   <div id="app">
-    <!-- nav -->
     <nav class="navbar">
       <div class="nav-brand">
         <router-link to="/" class="brand-link">Virtual Gallery</router-link>
-        <button 
-          class="mobile-menu-btn" 
-          @click="toggleMobileMenu"
-          aria-label="Toggle navigation menu"
-        >
+        <button class="mobile-menu-btn" @click="toggleMobileMenu" aria-label="Toggle navigation menu">
           <span class="menu-icon"></span>
         </button>
       </div>
 
       <div class="nav-links" :class="{ 'nav-links-mobile': isMobileMenuOpen }">
-        <router-link 
-          v-for="link in navigationLinks" 
-          :key="link.path"
-          :to="link.path"
-          @click="closeMobileMenu"
-        >
+        <router-link v-for="link in navigationLinks" :key="link.path" :to="link.path" @click="closeMobileMenu">
           {{ link.name }}
         </router-link>
 
-        <template v-if="!isAuthenticated">
+        <template v-if="isAuthenticated">
+          <span class="user-name">Welcome, {{ currentUser?.name || 'User' }}!</span>
+          <button @click="handleLogout" class="logout-btn">Logout</button>
+        </template>
+        <template v-else>
           <router-link to="/login" @click="closeMobileMenu">Login</router-link>
           <router-link to="/register" @click="closeMobileMenu">Register</router-link>
         </template>
-        <button 
-          v-else 
-          @click="handleLogout" 
-          class="logout-btn"
-        >
-          Logout
-        </button>
       </div>
     </nav>
-
-    <!-- content -->
     <RouterView />
   </div>
 </template>
@@ -54,10 +39,9 @@ const router = useRouter()
 
 const isMobileMenuOpen = ref(false)
 const isAuthenticated = computed(() => store.getters['auth/isAuthenticated'])
-
+const currentUser = computed(() => store.getters['auth/currentUser'])
 
 const navigationLinks = [
-  { name: 'Exhibitions', path: '/exhibitions' },
   { name: 'Artworks', path: '/artworks' },
   { name: 'Collections', path: '/collections' }
 ]
@@ -141,6 +125,13 @@ const handleLogout = async () => {
   bottom: -8px;
 }
 
+.user-name {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #4CAF50;
+  margin-right: 1rem;
+}
+
 .nav-links {
   display: flex;
   gap: 1.5rem;
@@ -188,7 +179,6 @@ main {
   padding: 2rem;
 }
 
-/* Responsive */
 @media (max-width: 768px) {
   .nav-brand {
     width: auto;
@@ -276,20 +266,42 @@ main {
   gap: var(--spacing-sm);
 }
 
-.grid-cols-1 { grid-template-columns: repeat(1, 1fr); }
-.grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
-.grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
-.grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
+.grid-cols-1 {
+  grid-template-columns: repeat(1, 1fr);
+}
+
+.grid-cols-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.grid-cols-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.grid-cols-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
 
 @media (max-width: 1024px) {
-  .grid-cols-4 { grid-template-columns: repeat(3, 1fr); }
+  .grid-cols-4 {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 @media (max-width: 768px) {
-  .grid-cols-3, .grid-cols-4 { grid-template-columns: repeat(2, 1fr); }
+
+  .grid-cols-3,
+  .grid-cols-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 576px) {
-  .grid-cols-2, .grid-cols-3, .grid-cols-4 { grid-template-columns: 1fr; }
+
+  .grid-cols-2,
+  .grid-cols-3,
+  .grid-cols-4 {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

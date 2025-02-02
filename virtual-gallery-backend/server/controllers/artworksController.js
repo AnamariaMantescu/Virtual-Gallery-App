@@ -1,43 +1,33 @@
 const { db } = require('../config/firebase');
+const admin = require('firebase-admin');
 
-/* get all artworks */
 const getAllArtworks = async (req, res, next) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 12;
-    const startAt = (page - 1) * limit;
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 10;
+    const offset = (page - 1) * limit;
 
-    // Get user role from the authenticated request
-    const userRole = req.user?.role || 'visitor';
-    
-    // Create base query
-    let artworksQuery = db.collection('artworks')
+    let artworksQuery = db
+      .collection('artworks')
       .orderBy('metadata.createdAt', 'desc');
 
-    // Apply role-based filtering
-    if (userRole !== 'admin') {
+    if (!req.user || req.user.role !== 'admin') {
       artworksQuery = artworksQuery.where('isApproved', '==', true);
     }
 
-    // Get total count based on role
     let totalQuery = db.collection('artworks');
-    if (userRole !== 'admin') {
+    if (!req.user || req.user.role !== 'admin') {
       totalQuery = totalQuery.where('isApproved', '==', true);
     }
-    const totalSnapshot = await totalQuery.get();
-    const totalArtworks = totalSnapshot.size;
+    const totalSnap = await totalQuery.get();
+    const totalArtworks = totalSnap.size;
 
-    // Apply pagination to main query
-    artworksQuery = artworksQuery.offset(startAt).limit(limit);
-    const artworksSnapshot = await artworksQuery.get();
+    artworksQuery = artworksQuery.offset(offset).limit(limit);
+    const snapshot = await artworksQuery.get();
 
-    // Transform data
     const artworks = [];
-    artworksSnapshot.forEach((doc) => {
-      artworks.push({
-        id: doc.id,
-        ...doc.data()
-      });
+    snapshot.forEach((doc) => {
+      artworks.push({ id: doc.id, ...doc.data() });
     });
 
     res.json({
@@ -52,31 +42,27 @@ const getAllArtworks = async (req, res, next) => {
   }
 };
 
-/* get artwork by ID */
 const getArtworkById = async (req, res, next) => {
   try {
-    const artworkDoc = await db.collection('artworks').doc(req.params.id).get();
-    
-    if (!artworkDoc.exists) {
+    const docRef = db.collection('artworks').doc(req.params.id);
+    const docSnap = await docRef.get();
+    if (!docSnap.exists) {
       return next({ statusCode: 404, message: 'Artwork not found' });
     }
 
-    const artwork = { id: artworkDoc.id, ...artworkDoc.data() };
-    const userRole = req.user?.role || 'visitor';
+    const artworkData = { id: docSnap.id, ...docSnap.data() };
 
-    // Check if user has access to this artwork
-    if (!artwork.isApproved && userRole !== 'admin') {
-      return next({ statusCode: 403, message: 'Access denied' });
+    if ((!req.user || req.user.role !== 'admin') && !artworkData.isApproved) {
+      return next({ statusCode: 404, message: 'Artwork not found' });
     }
 
-    res.json(artwork);
+    res.json(artworkData);
   } catch (error) {
     console.error('Error fetching artwork:', error);
     next({ statusCode: 500, message: 'Error fetching artwork' });
   }
 };
 
-/* create artwork */
 const createArtwork = async (req, res, next) => {
   try {
     const {
@@ -85,12 +71,14 @@ const createArtwork = async (req, res, next) => {
       description,
       imageUrl,
       year,
-      category,
-      stock,
+      style,
       medium,
       dimensions,
-      status
+      status,
+      collectionId
     } = req.body;
+
+    const isAdmin = req.user && req.user.role === 'admin';
 
     const newArtwork = {
       title,
@@ -98,20 +86,28 @@ const createArtwork = async (req, res, next) => {
       description,
       imageUrl,
       year,
-      category,
-      stock,
-      medium,
-      dimensions,
-      status,
-      isApproved: req.user.role === 'admin', // Auto-approve if admin creates
+      style,
+      medium: medium || '',
+      dimensions: dimensions || {},
+      status: status || 'available',
+      isApproved: isAdmin,
+      collectionId: collectionId || '',
       metadata: {
         createdAt: new Date().toISOString(),
         createdBy: req.user.uid,
-        updatedAt: null,
-      },
+        updatedAt: null
+      }
     };
 
     const docRef = await db.collection('artworks').add(newArtwork);
+
+    if (collectionId) {
+      const collectionRef = db.collection('collections').doc(collectionId);
+      await collectionRef.update({
+        artworks: admin.firestore.FieldValue.arrayUnion(docRef.id)
+      });
+    }
+
     res.status(201).json({ id: docRef.id, ...newArtwork });
   } catch (error) {
     console.error('Error creating artwork:', error);
@@ -119,16 +115,8 @@ const createArtwork = async (req, res, next) => {
   }
 };
 
-/* update artwork */
 const updateArtwork = async (req, res, next) => {
   try {
-    const artworkRef = db.collection('artworks').doc(req.params.id);
-    const artworkDoc = await artworkRef.get();
-
-    if (!artworkDoc.exists) {
-      return next({ statusCode: 404, message: 'Artwork not found' });
-    }
-
     const {
       title,
       artist,
@@ -136,10 +124,11 @@ const updateArtwork = async (req, res, next) => {
       imageUrl,
       year,
       category,
-      stock,
       medium,
       dimensions,
-      status
+      status,
+      isApproved,
+      collectionId // <- new
     } = req.body;
 
     const updateData = {
@@ -149,34 +138,71 @@ const updateArtwork = async (req, res, next) => {
       ...(imageUrl && { imageUrl }),
       ...(year !== undefined && { year }),
       ...(category && { category }),
-      ...(stock !== undefined && { stock }),
       ...(medium && { medium }),
       ...(dimensions && { dimensions }),
       ...(status && { status }),
+      // Admin can set isApproved
+      ...(isApproved !== undefined && { isApproved }),
+      // Admin can also change collection
+      ...(collectionId !== undefined && { collectionId }),
       'metadata.updatedAt': new Date().toISOString()
     };
 
-    await artworkRef.update(updateData);
-    
-    const updatedDoc = await artworkRef.get();
-    res.json({ id: req.params.id, ...updatedDoc.data() });
+    const docRef = db.collection('artworks').doc(req.params.id);
+    const docSnap = await docRef.get();
+    if (!docSnap.exists) {
+      return next({ statusCode: 404, message: 'Artwork not found' });
+    }
+
+    await docRef.update(updateData);
+    res.json({ id: req.params.id, ...updateData });
   } catch (error) {
     console.error('Error updating artwork:', error);
     next({ statusCode: 500, message: 'Error updating artwork' });
   }
 };
 
-/* delete artwork */
-const deleteArtwork = async (req, res, next) => {
+const approveArtwork = async (req, res, next) => {
   try {
     const artworkRef = db.collection('artworks').doc(req.params.id);
-    const artworkDoc = await artworkRef.get();
+    const artworkSnap = await artworkRef.get();
 
-    if (!artworkDoc.exists) {
+    if (!artworkSnap.exists) {
       return next({ statusCode: 404, message: 'Artwork not found' });
     }
 
-    await artworkRef.delete();
+    const artworkData = artworkSnap.data();
+    if (artworkData.isApproved) {
+      return res.json({ message: 'Artwork already approved.' });
+    }
+    await artworkRef.update({
+      isApproved: true,
+      'metadata.updatedAt': new Date().toISOString()
+    });
+
+    if (artworkData.collectionId) {
+      const collectionRef = db.collection('collections').doc(artworkData.collectionId);
+      await collectionRef.update({
+        artworks: admin.firestore.FieldValue.arrayUnion(req.params.id)
+      });
+    }
+
+    res.json({ message: 'Artwork approved successfully' });
+  } catch (error) {
+    console.error('Error approving artwork:', error);
+    next({ statusCode: 500, message: 'Error approving artwork' });
+  }
+};
+
+const deleteArtwork = async (req, res, next) => {
+  try {
+    const docRef = db.collection('artworks').doc(req.params.id);
+    const docSnap = await docRef.get();
+    if (!docSnap.exists) {
+      return next({ statusCode: 404, message: 'Artwork not found' });
+    }
+
+    await docRef.delete();
     res.json({ message: 'Artwork deleted successfully' });
   } catch (error) {
     console.error('Error deleting artwork:', error);
@@ -190,4 +216,5 @@ module.exports = {
   createArtwork,
   updateArtwork,
   deleteArtwork,
+  approveArtwork
 };

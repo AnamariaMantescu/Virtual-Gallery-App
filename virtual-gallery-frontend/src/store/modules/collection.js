@@ -1,5 +1,4 @@
-import { db } from '@/config/firebase'
-import { collection, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc } from 'firebase/firestore'
+import api from '@/services/api';
 
 export default {
   namespaced: true,
@@ -11,119 +10,92 @@ export default {
   },
   mutations: {
     SET_COLLECTIONS(state, collections) {
-      state.collections = collections
+      state.collections = collections;
     },
     SET_LOADING(state, status) {
-      state.loading = status
+      state.loading = status;
     },
     SET_ERROR(state, error) {
-      state.error = error
+      state.error = error;
     },
     SET_CURRENT_COLLECTION(state, collection) {
-      state.currentCollection = collection
-    },
-    ADD_COLLECTION(state, collection) {
-      state.collections.push(collection)
-    },
-    UPDATE_COLLECTION(state, updatedCollection) {
-      const index = state.collections.findIndex(c => c.id === updatedCollection.id)
-      if (index !== -1) {
-        state.collections[index] = updatedCollection
-      }
-    },
-    DELETE_COLLECTION(state, id) {
-      state.collections = state.collections.filter(c => c.id !== id)
+      state.currentCollection = collection;
     }
   },
   getters: {
-    allCollections: state => state.collections,
-    loading: state => state.loading,
-    error: state => state.error,
-    currentCollection: state => state.currentCollection
+    allCollections: (state) => state.collections,
+    loading: (state) => state.loading,
+    error: (state) => state.error,
+    currentCollection: (state) => state.currentCollection
   },
   actions: {
     async fetchCollections({ commit }) {
-      commit('SET_LOADING', true)
+      commit('SET_LOADING', true);
       try {
-        const querySnapshot = await getDocs(collection(db, 'collections'))
-        const collections = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }))
-        commit('SET_COLLECTIONS', collections)
+        const response = await api.get('/collections');
+        commit('SET_COLLECTIONS', response.data);
       } catch (error) {
-        commit('SET_ERROR', error.message)
+        commit('SET_ERROR', error.response?.data?.message || error.message);
       } finally {
-        commit('SET_LOADING', false)
+        commit('SET_LOADING', false);
       }
     },
 
     async fetchCollectionById({ commit }, id) {
-      commit('SET_LOADING', true)
+      commit('SET_LOADING', true);
       try {
-        const docRef = doc(db, 'collections', id)
-        const docSnap = await getDoc(docRef)
-        if (docSnap.exists()) {
-          const collection = { id: docSnap.id, ...docSnap.data() }
-          commit('SET_CURRENT_COLLECTION', collection)
-          return collection
-        }
+        const response = await api.get(`/collections/${id}`);
+        console.log('Collection Data:', response.data);
+        commit('SET_CURRENT_COLLECTION', response.data);
+        return response.data;
       } catch (error) {
-        commit('SET_ERROR', error.message)
+        commit('SET_ERROR', error.response?.data?.message || error.message);
+        throw error;
       } finally {
-        commit('SET_LOADING', false)
+        commit('SET_LOADING', false);
       }
     },
 
-    async createCollection({ commit }, collectionData) {
-      commit('SET_LOADING', true)
+    async createCollection({ commit, state }, collectionData) {
+      commit('SET_LOADING', true);
       try {
-        const docRef = await addDoc(collection(db, 'collections'), {
-          ...collectionData,
-          createdAt: new Date().toISOString()
-        })
-        const newCollection = { id: docRef.id, ...collectionData }
-        commit('ADD_COLLECTION', newCollection)
-        return newCollection
+        const response = await api.post('/collections', collectionData);
+
+        const newCollection = response.data;
+        commit('SET_COLLECTIONS', [...state.collections, newCollection]);
       } catch (error) {
-        commit('SET_ERROR', error.message)
-        throw error
+        commit('SET_ERROR', error.response?.data?.message || error.message);
+        throw error;
       } finally {
-        commit('SET_LOADING', false)
+        commit('SET_LOADING', false);
       }
     },
 
     async updateCollection({ commit }, { id, collectionData }) {
-      commit('SET_LOADING', true)
+      commit('SET_LOADING', true);
       try {
-        const docRef = doc(db, 'collections', id)
-        await updateDoc(docRef, {
-          ...collectionData,
-          updatedAt: new Date().toISOString()
-        })
-        const updatedCollection = { id, ...collectionData }
-        commit('UPDATE_COLLECTION', updatedCollection)
-        return updatedCollection
+        const response = await api.put(`/collections/${id}`, collectionData);
+        commit('SET_CURRENT_COLLECTION', response.data);
+        return response.data;
       } catch (error) {
-        commit('SET_ERROR', error.message)
-        throw error
+        commit('SET_ERROR', error.response?.data?.message || error.message);
+        throw error;
       } finally {
-        commit('SET_LOADING', false)
+        commit('SET_LOADING', false);
       }
     },
 
-    async deleteCollection({ commit }, id) {
-      commit('SET_LOADING', true)
+    async deleteCollection({ commit, state }, id) {
+      commit('SET_LOADING', true);
       try {
-        const docRef = doc(db, 'collections', id)
-        await deleteDoc(docRef)
-        commit('DELETE_COLLECTION', id)
+        await api.delete(`/collections/${id}`);
+        commit('SET_COLLECTIONS', state.collections.filter((c) => c.id !== id));
       } catch (error) {
-        commit('SET_ERROR', error.message)
-        throw error
+        commit('SET_ERROR', error.response?.data?.message || error.message);
+        throw error;
       } finally {
-        commit('SET_LOADING', false)
+        commit('SET_LOADING', false);
       }
     }
   }
-}
+};

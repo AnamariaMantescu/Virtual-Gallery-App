@@ -4,34 +4,24 @@
     <form @submit.prevent="handleSubmit" class="form">
       <div class="form-group">
         <label for="title">Title</label>
-        <input 
-          id="title"
-          v-model="formData.title"
-          type="text"
-          required
-        >
+        <input id="title" v-model="formData.title" type="text" required>
       </div>
 
       <div class="form-group">
         <label for="description">Description</label>
-        <textarea
-          id="description"
-          v-model="formData.description"
-          rows="4"
-          required
-        ></textarea>
+        <textarea id="description" v-model="formData.description" rows="4" required></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="theme">Theme</label>
+        <input id="theme" v-model="formData.theme" type="text" placeholder="Enter a theme for the collection" required>
       </div>
 
       <div class="form-group">
         <label>Select Artworks</label>
         <div class="artwork-selection">
           <div v-for="artwork in availableArtworks" :key="artwork.id" class="artwork-option">
-            <input
-              type="checkbox"
-              :value="artwork.id"
-              v-model="formData.artworks"
-              :id="'artwork-' + artwork.id"
-            >
+            <input type="checkbox" :value="artwork.id" v-model="formData.artworks" :id="'artwork-' + artwork.id">
             <label :for="'artwork-' + artwork.id">{{ artwork.title }}</label>
           </div>
         </div>
@@ -56,6 +46,7 @@ const router = useRouter()
 const formData = ref({
   title: '',
   description: '',
+  theme: '',
   artworks: []
 })
 
@@ -72,7 +63,13 @@ onMounted(async () => {
 
 const handleSubmit = async () => {
   try {
-    await store.dispatch('collection/createCollection', formData.value)
+    await store.dispatch('collection/createCollection', {
+      title: formData.value.title,
+      description: formData.value.description,
+      theme: formData.value.theme,
+      artworks: formData.value.artworks
+    })
+
     router.push('/collections')
   } catch (error) {
     console.error('Error creating collection:', error)
@@ -118,6 +115,7 @@ textarea {
   border: 1px solid #ddd;
   padding: 1rem;
   border-radius: 4px;
+  background: #fafafa;
 }
 
 .artwork-option {

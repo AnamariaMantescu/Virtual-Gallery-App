@@ -2,7 +2,7 @@
   <div class="login-view">
     <div class="auth-container">
       <h1>Login</h1>
-      
+
       <form @submit.prevent="handleLogin" class="auth-form">
         <div v-if="error" class="error-message">
           {{ error }}
@@ -10,42 +10,23 @@
 
         <div class="form-group">
           <label for="email">Email</label>
-          <input 
-            type="email" 
-            id="email" 
-            v-model="email" 
-            required
-            :disabled="loading"
-            class="form-input"
-            placeholder="email"
-          >
+          <input type="email" id="email" v-model="email" required :disabled="loading" class="form-input"
+            placeholder="email">
         </div>
-
         <div class="form-group">
           <label for="password">Password</label>
-          <input 
-            type="password" 
-            id="password" 
-            v-model="password" 
-            required
-            :disabled="loading"
-            class="form-input"
-            placeholder="password"
-          >
+          <input type="password" id="password" v-model="password" required :disabled="loading" class="form-input"
+            placeholder="password">
         </div>
 
         <div class="form-actions">
-          <button 
-            type="submit" 
-            class="submit-btn"
-            :disabled="loading"
-          >
+          <button type="submit" class="submit-btn" :disabled="loading">
             {{ loading ? 'Logging in...' : 'Sign up' }}
           </button>
         </div>
 
         <div class="auth-links">
-          <p>Don't have an account? 
+          <p>Don't have an account?
             <router-link to="/register">Register here</router-link>
           </p>
         </div>

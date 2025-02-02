@@ -8,7 +8,6 @@
         <nav class="main-nav">
           <router-link to="/artworks">Artworks</router-link>
           <router-link to="/collections">Collections</router-link>
-          <router-link to="/exhibitions">Exhibitions</router-link>
         </nav>
         <div class="user-menu">
           <template v-if="isAuthenticated">
@@ -29,7 +28,6 @@
       <nav class="mobile-nav">
         <router-link to="/artworks" @click="closeMobileMenu">Artworks</router-link>
         <router-link to="/collections" @click="closeMobileMenu">Collections</router-link>
-        <router-link to="/exhibitions" @click="closeMobileMenu">Exhibitions</router-link>
       </nav>
     </aside>
 
@@ -79,7 +77,6 @@ const navigateToLogin = () => {
 </script>
 
 <style>
-
 .app-layout {
   min-height: 100vh;
   display: flex;
@@ -143,7 +140,7 @@ const navigateToLogin = () => {
 }
 
 .app-main {
-  margin-top: 64px; 
+  margin-top: 64px;
   flex: 1;
   padding: var(--spacing-xl);
 }
@@ -208,26 +205,47 @@ const navigateToLogin = () => {
   }
 }
 
-/* Grid System */
 .grid {
   display: grid;
   gap: var(--spacing-md);
 }
 
-.grid-cols-1 { grid-template-columns: repeat(1, 1fr); }
-.grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
-.grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
-.grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
+.grid-cols-1 {
+  grid-template-columns: repeat(1, 1fr);
+}
+
+.grid-cols-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.grid-cols-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.grid-cols-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
 
 @media (max-width: 1024px) {
-  .grid-cols-4 { grid-template-columns: repeat(3, 1fr); }
+  .grid-cols-4 {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 @media (max-width: 768px) {
-  .grid-cols-3, .grid-cols-4 { grid-template-columns: repeat(2, 1fr); }
+
+  .grid-cols-3,
+  .grid-cols-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 576px) {
-  .grid-cols-2, .grid-cols-3, .grid-cols-4 { grid-template-columns: 1fr; }
+
+  .grid-cols-2,
+  .grid-cols-3,
+  .grid-cols-4 {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

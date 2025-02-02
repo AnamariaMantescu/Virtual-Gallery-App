@@ -1,8 +1,8 @@
 <template>
-  <div class="login-view"> 
+  <div class="login-view">
     <div class="auth-container">
       <h1>Register</h1>
-      
+
       <form @submit.prevent="handleRegister" class="auth-form">
         <div v-if="error" class="error-message">
           {{ error }}
@@ -13,68 +13,36 @@
 
         <div class="form-group">
           <label for="name">Name</label>
-          <input
-            type="text"
-            id="name"
-            v-model="name"
-            required
-            :disabled="loading"
-            class="form-input"
-            placeholder="Your name"
-          >
+          <input type="text" id="name" v-model="name" required :disabled="loading" class="form-input"
+            placeholder="Your name">
         </div>
 
         <div class="form-group">
           <label for="email">Email</label>
-          <input 
-            type="email" 
-            id="email" 
-            v-model="email" 
-            required
-            :disabled="loading"
-            class="form-input"
-            placeholder="email"
-          >
+          <input type="email" id="email" v-model="email" required :disabled="loading" class="form-input"
+            placeholder="email">
         </div>
 
         <div class="form-group">
           <label for="password">Password</label>
-          <input 
-            type="password" 
-            id="password" 
-            v-model="password" 
-            required
-            :disabled="loading"
-            class="form-input"
-            placeholder="password"
-          >
+          <input type="password" id="password" v-model="password" required :disabled="loading" class="form-input"
+            placeholder="password">
         </div>
 
         <div class="form-group">
           <label for="confirmPassword">Confirm Password</label>
-          <input 
-            type="password" 
-            id="confirmPassword" 
-            v-model="confirmPassword" 
-            required
-            :disabled="loading"
-            class="form-input"
-            placeholder="confirm password"
-          >
+          <input type="password" id="confirmPassword" v-model="confirmPassword" required :disabled="loading"
+            class="form-input" placeholder="confirm password">
         </div>
 
         <div class="form-actions">
-          <button 
-            type="submit" 
-            class="submit-btn"
-            :disabled="loading || !passwordsMatch"
-          >
+          <button type="submit" class="submit-btn" :disabled="loading || !passwordsMatch">
             {{ loading ? 'Creating account...' : 'Register' }}
           </button>
         </div>
 
         <div class="auth-links">
-          <p>Already have an account? 
+          <p>Already have an account?
             <router-link to="/login">Login here</router-link>
           </p>
         </div>
@@ -98,7 +66,7 @@ const confirmPassword = ref('')
 const error = computed(() => store.getters['auth/error'])
 const loading = computed(() => store.getters['auth/loading'])
 
-const passwordsMatch = computed(() => 
+const passwordsMatch = computed(() =>
   password.value && confirmPassword.value && password.value === confirmPassword.value
 )
 
@@ -133,7 +101,7 @@ const handleRegister = async () => {
 </script>
 
 <style scoped>
-.login-view { 
+.login-view {
   min-height: 100vh;
   background-image: linear-gradient(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1)), url('@/assets/pozaarta.png');
   background-size: cover;
@@ -154,7 +122,7 @@ const handleRegister = async () => {
 
 .auth-container h1 {
   text-align: center;
-  color: white; 
+  color: white;
   margin-bottom: 2rem;
   font-weight: bold;
 }
@@ -230,11 +198,11 @@ const handleRegister = async () => {
 }
 
 .form-input::placeholder {
-  color: rgba(255, 255, 255, 0.7); 
+  color: rgba(255, 255, 255, 0.7);
 }
 
 
 .form-group label {
-  display: none; 
+  display: none;
 }
 </style>

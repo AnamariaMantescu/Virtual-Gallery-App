@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { admin, db } = require('../config/firebase'); 
+const { admin, db } = require('../config/firebase');
 const { authMiddleware } = require('../middleware/auth');
 
 
@@ -10,8 +10,8 @@ const validateRequest = require('../middleware/validate');
 
 router.post(
   '/register',
-  registerUserValidationRules, 
-  validateRequest,             
+  registerUserValidationRules,
+  validateRequest,
   async (req, res, next) => {
     try {
       const { email, name } = req.body;
@@ -51,10 +51,14 @@ router.post(
 router.get('/me', authMiddleware, async (req, res, next) => {
   try {
     const userRecord = await admin.auth().getUser(req.user.uid);
+    const userDoc = await db.collection('users').doc(req.user.uid).get();
+    const userData = userDoc.exists ? userDoc.data() : {};
+
     res.json({
       uid: userRecord.uid,
       email: userRecord.email,
-      role: req.user.role
+      role: req.user.role,
+      name: userData.name || ''
     });
   } catch (error) {
     console.error('Eroare obținere user:', error);

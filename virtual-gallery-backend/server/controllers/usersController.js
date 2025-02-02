@@ -1,6 +1,5 @@
 const { db } = require('../config/firebase');
 
-/* get all users (admin) */
 const getAllUsers = async (req, res, next) => {
   try {
     const usersSnapshot = await db.collection('users').get();
@@ -15,7 +14,6 @@ const getAllUsers = async (req, res, next) => {
   }
 };
 
-/* get user by ID (admin sau userul) */
 const getUserById = async (req, res, next) => {
   try {
     const userDoc = await db.collection('users').doc(req.params.id).get();
@@ -34,7 +32,6 @@ const getUserById = async (req, res, next) => {
   }
 };
 
-/* update user (admin sau userul) */
 const updateUser = async (req, res, next) => {
   try {
     const { name, email, role } = req.body;
@@ -64,7 +61,6 @@ const updateUser = async (req, res, next) => {
   }
 };
 
-/* delete a user (admin) */
 const deleteUser = async (req, res, next) => {
   try {
     const userRef = db.collection('users').doc(req.params.id);
